@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Умный суфлер с озвучкой — Гоголь "Русь"</title>
+  <style>
+    :root {
+      --bg-color: #090d16;
+      --card-bg: #111c2e;
+      --text-color: #475569;
+      --read-color: #334155;
+      --target-bg: #0284c7;
+      --target-color: #ffffff;
+      --error-bg: #ef4444;
+      --error-color: #ffffff;
+      --accent-green: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      transition: background-color 0.3s ease;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    body.reading-mode header,
+    body.reading-mode .controls-top,
+    body.reading-mode .hint-panel {
+      display: none;
+    }
+
+    header { text-align: center; padding: 10px 0; }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: #94a3b8; font-size: 1rem; }
+
+    .controls-top {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      background: var(--card-bg);
+      padding: 16px 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      border: 1px solid #1e293b;
+    }
+
+    .controls-active {
+      display: none;
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(17, 28, 46, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 12px 24px;
+      border-radius: 50px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+      border: 1px solid #334155;
+      gap: 16px;
+      z-index: 100;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    body.reading-mode .controls-active { display: flex; }
+
+    button {
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #btn-start {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: white;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+    }
+    #btn-start:hover { transform: translateY(-2px); }
+
+    .btn-action { padding: 10px 18px; font-size: 0.95rem; border-radius: 30px; }
+    #btn-pause { background: #334155; color: #f8fafc; }
+    #btn-stop { background: #dc2626; color: #f8fafc; }
+    #btn-reset { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    
+    .tts-toggle {
+      background: #0f172a;
+      color: #38bdf8;
+      border: 1px solid #334155;
+      font-size: 0.9rem;
+      padding: 8px 14px;
+      border-radius: 20px;
+    }
+    .tts-toggle.active {
+      background: #0369a1;
+      color: #fff;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      color: #94a3b8;
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; background-color: #64748b; }
+    .dot.active { background-color: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+
+    /* Увеличено видимое поле для отображения большего количества текста */
+    .reader-box {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 40px;
+      height: 520px;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      box-shadow: inset 0 2px 15px rgba(0, 0, 0, 0.6);
+      border: 1px solid #1e293b;
+      transition: all 0.3s ease;
+    }
+
+    body.reading-mode .reader-box {
+      height: 78vh;
+      padding: 60px 50px;
+      background: #0d1524;
+      border-color: #334155;
+    }
+
+    .text-content {
+      font-size: 1.4rem;
+      line-height: 2.3;
+      word-spacing: 3px;
+      color: var(--text-color);
+    }
+
+    body.reading-mode .text-content {
+      font-size: 1.8rem;
+      line-height: 2.5;
+    }
+
+    .word {
+      padding: 3px 6px;
+      border-radius: 6px;
+      transition: background-color 0.05s ease, color 0.05s ease, transform 0.05s ease;
+      display: inline-block;
+    }
+
+    .word.read { color: var(--read-color); opacity: 0.5; }
+    
+    .word.next-target {
+      color: var(--target-color);
+      background-color: var(--target-bg);
+      font-weight: 700;
+      box-shadow: 0 0 16px rgba(2, 132, 199, 0.6);
+      transform: scale(1.05);
+    }
+
+    .word.error-word {
+      color: var(--error-color);
+      background-color: var(--error-bg);
+      font-weight: 700;
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.7);
+    }
+
+    .hint-panel {
+      font-size: 0.9rem;
+      color: #64748b;
+      text-align: center;
+      background: #111c2e;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px dashed #334155;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>📜 Интерактивный суфлер</h1>
+    <p class="subtitle">Распознавание речи + дублирование текста в наушники (синтез речи)</p>
+  </header>
+
+  <div class="controls-top">
+    <button id="btn-start"><span>🎤</span> Начать чтение</button>
+    <button id="btn-reset">🔄 Сбросить</button>
+    <button id="btn-tts-toggle" class="tts-toggle">🎧 Озвучка в наушники: Выкл</button>
+
+    <div class="status-indicator">
+      <div class="dot" id="status-dot"></div>
+      <span id="status-text">Ожидание запуска</span>
+    </div>
+  </div>
+
+  <div class="hint-panel">
+    💡 Включите кнопку «Озвучка в наушники», чтобы суфлер дублировал правильные слова голосом прямо в ваши наушники.
+  </div>
+
+  <div class="reader-box" id="reader-box">
+    <div class="text-content" id="text-container"></div>
+  </div>
+</div>
+
+<div class="controls-active">
+  <div class="status-indicator" style="color: #fff;">
+    <div class="dot active"></div>
+    <span id="active-status-text">Слушаю вас...</span>
+  </div>
+  <button class="btn-action" id="btn-tts-active" class="tts-toggle">🎧 Наушники: Выкл</button>
+  <button class="btn-action" id="btn-pause">⏸️ Пауза</button>
+  <button class="btn-action" id="btn-stop">⏹ Завершить</button>
+</div>
+
+<script>
+  const sourceText = `Русь! Русь! вижу тебя, из моего чудного, прекрасного далека тебя вижу: бедно, разбросанно и неприютно в тебе; не развеселят, не испугают взоров дерзкие дива природы, венчанные дерзкими дивами искусства, города с многооконными высокими дворцами, вросшими в утесы, картинные дерева и плющи, вросшие в домы, в шуме и в вечной пыли водопадов; не опрокинется назад голова посмотреть на громоздящиеся без конца над нею и в вышине каменные глыбы; не блеснут сквозь наброшенные одна на другую темные арки, опутанные виноградными сучьями, плющами и несметными миллионами диких роз, не блеснут сквозь них вдали вечные линии сияющих гор, несущихся в серебряные ясные небеса. Открыто-пустынно и ровно все в тебе; как точки, как значки, неприметно торчат среди равнин невысокие твои города; ничто не обольстит и не очарует взора. Но какая же непостижимая, тайная сила влечет к тебе? Почему слышится и раздается немолчно в ушах твоя тоскливая, несущаяся по всей длине и ширине твоей, от моря до моря, песня? Что в ней, в этой песне? Что зовет, и рыдает, и хватает за сердце? Какие звуки болезненно лобзают, и стремятся в душу, и вьются около моего сердца? Русь! чего же ты хочешь от меня? какая непостижимая связь таится между нами? Что глядишь ты так, и зачем все, что ни есть в тебе, обратило на меня полные ожидания очи?.. И еще, полный недоумения, неподвижно стою я, а уже главу осенило грозное облако, тяжелое грядущими дождями, и онемела мысль пред твоим пространством. Что пророчит сей необъятный простор? Здесь ли, в тебе ли не родиться беспредельной мысли, когда ты сама без конца? Здесь ли не быть богатырю, когда есть место, где развернуться и пройтись ему? И грозно объемлет меня могучее пространство, страшною силою отразясь во глубине моей; неестественной властью осветились мои очи: у! какая сверкающая, чудная, незнакомая земле даль! Русь!..`;
+
+  let wordsData = [];
+  let currentIndex = 0;
+  let isListening = false;
+  let isPaused = false;
+  let ttsEnabled = false; // Флаг озвучки в наушники
+  let recognition = null;
+
+  const textContainer = document.getElementById('text-container');
+  const btnStart = document.getElementById('btn-start');
+  const btnPause = document.getElementById('btn-pause');
+  const btnStop = document.getElementById('btn-stop');
+  const btnReset = document.getElementById('btn-reset');
+  const btnTtsToggle = document.getElementById('btn-tts-toggle');
+  const btnTtsActive = document.getElementById('btn-tts-active');
+  const statusDot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+  const activeStatusText = document.getElementById('active-status-text');
+
+  function normalizeWord(word) {
+    return word.toLowerCase().replace(/ё/g, 'е').replace(/[^а-яa-z0-9]/g, '');
+  }
+
+  function initText(rawText) {
+    textContainer.innerHTML = '';
+    wordsData = [];
+    currentIndex = 0;
+
+    rawText.trim().split(/\s+/).forEach((token, index) => {
+      const span = document.createElement('span');
+      span.className = 'word';
+      span.textContent = token;
+      textContainer.appendChild(span);
+      textContainer.appendChild(document.createTextNode(' '));
+
+      wordsData.push({
+        raw: token,
+        normalized: normalizeWord(token),
+        element: span
+      });
+    });
+
+    updateHighlights();
+  }
+
+  function updateHighlights() {
+    wordsData.forEach((item, idx) => {
+      item.element.classList.remove('read', 'next-target', 'error-word');
+      if (idx < currentIndex) {
+        item.element.classList.add('read');
+      } else if (idx === currentIndex) {
+        item.element.classList.add('next-target');
+      }
+    });
+
+    if (currentIndex < wordsData.length) {
+      wordsData[currentIndex].element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  // Функция озвучки слова в наушники (Speech Synthesis API)
+  function speakWordInHeadphones(wordText) {
+    if (!ttsEnabled || !('speechSynthesis' in window)) return;
+    
+    // Останавливаем предыдущую очередь, чтобы озвучка не накапливалась
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(wordText);
+    utterance.lang = 'ru-RU';
+    utterance.rate = 1.1; // Чуть быстрее для динамики
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // Синхронизация состояния кнопок озвучки
+  function toggleTts() {
+    ttsEnabled = !ttsEnabled;
+    const text = ttsEnabled ? '🎧 Озвучка в наушники: Вкл' : '🎧 Озвучка в наушники: Выкл';
+    btnTtsToggle.textContent = text;
+    btnTtsActive.textContent = text;
+    
+    if (ttsEnabled) {
+      btnTtsToggle.classList.add('active');
+      btnTtsActive.classList.add('active');
+    } else {
+      btnTtsToggle.classList.remove('active');
+      btnTtsActive.classList.remove('active');
+    }
+  }
+
+  function initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Ваш браузер не поддерживает распознавание речи. Используйте Google Chrome.');
+      return;
+    }
+
+    recognition = new SpeechRecognition();
+    recognition.lang = 'ru-RU';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event) => {
+      if (isPaused) return;
+
+      let latestTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        latestTranscript += event.results[i][0].transcript + ' ';
+      }
+      processSpokenText(latestTranscript);
+    };
+
+    recognition.onerror = (event) => {
+      console.warn('Ошибка:', event.error);
+    };
+
+    recognition.onend = () => {
+      if (isListening && !isPaused) {
+        recognition.start();
+      }
+    };
+  }
+
+  function processSpokenText(transcript) {
+    const spokenWords = transcript.split(/\s+/).map(normalizeWord).filter(w => w.length > 0);
+    if (spokenWords.length === 0) return;
+
+    const recentSpoken = spokenWords.slice(-3);
+    const searchWindow = 8;
+
+    for (let spoken of recentSpoken) {
+      if (spoken.length < 2) continue;
+
+      for (let offset = 0; offset < searchWindow; offset++) {
+        const targetIdx = currentIndex + offset;
+        if (targetIdx >= wordsData.length) break;
+
+        const targetWord = wordsData[targetIdx].normalized;
+
+        if (targetWord && (spoken === targetWord || targetWord.startsWith(spoken) || spoken.startsWith(targetWord))) {
+          // Озвучиваем слово в наушники перед переходом
+          speakWordInHeadphones(wordsData[targetIdx].raw);
+
+          currentIndex = targetIdx + 1;
+          updateHighlights();
+          return;
+        }
+      }
+    }
+
+    const currentSpan = wordsData[currentIndex]?.element;
+    if (currentSpan && !currentSpan.classList.contains('error-word')) {
+      currentSpan.classList.add('error-word');
+      activeStatusText.textContent = `Ошибка произношения!`;
+      setTimeout(() => {
+        if (!isPaused && isListening) activeStatusText.textContent = 'Слушаю вас...';
+      }, 1000);
+    }
+  }
+
+  function startListening() {
+    if (!recognition) initSpeechRecognition();
+    if (!recognition) return;
+
+    try {
+      recognition.start();
+      isListening = true;
+      isPaused = false;
+      document.body.classList.add('reading-mode');
+      statusDot.classList.add('active');
+      statusText.textContent = 'Идет чтение...';
+      activeStatusText.textContent = 'Слушаю вас...';
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function stopListening() {
+    isListening = false;
+    isPaused = false;
+    if (recognition) recognition.stop();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    document.body.classList.remove('reading-mode');
+    statusDot.classList.remove('active');
+    statusText.textContent = 'Остановлено';
+  }
+
+  btnStart.addEventListener('click', startListening);
+  btnTtsToggle.addEventListener('click', toggleTts);
+  btnTtsActive.addEventListener('click', toggleTts);
+
+  btnPause.addEventListener('click', () => {
+    isPaused = !isPaused;
+    if (isPaused) {
+      btnPause.innerHTML = '▶️ Продолжить';
+      activeStatusText.textContent = 'На паузе';
+    } else {
+      btnPause.innerHTML = '⏸️ Пауза';
+      activeStatusText.textContent = 'Слушаю вас...';
+    }
+  });
+
+  btnStop.addEventListener('click', stopListening);
+
+  btnReset.addEventListener('click', () => {
+    currentIndex = 0;
+    updateHighlights();
+  });
+
+  initText(sourceText);
+</script>
+</body>
+</html>
