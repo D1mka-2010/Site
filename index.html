@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Умный суфлер — Гоголь "Русь"</title>
+  <title>Умный суфлер (Без задержек) — Гоголь "Русь"</title>
   <style>
     :root {
       --bg-color: #090d16;
@@ -29,7 +29,7 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
-      transition: background-color 0.4s ease;
+      transition: background-color 0.3s ease;
     }
 
     .container {
@@ -40,19 +40,13 @@
       gap: 20px;
     }
 
-    /* Режим чтения (когда активна запись — прячем шапку и увеличиваем текст) */
     body.reading-mode header,
     body.reading-mode .controls-top,
     body.reading-mode .hint-panel {
       display: none;
     }
 
-    header {
-      text-align: center;
-      padding: 10px 0;
-      transition: all 0.3s ease;
-    }
-
+    header { text-align: center; padding: 10px 0; }
     h1 {
       font-size: 2rem;
       margin-bottom: 8px;
@@ -60,10 +54,8 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-
     .subtitle { color: #94a3b8; font-size: 1rem; }
 
-    /* Панель управления */
     .controls-top {
       display: flex;
       gap: 12px;
@@ -76,7 +68,6 @@
       border: 1px solid #1e293b;
     }
 
-    /* Плавающая панель паузы/остановки (скрыта до запуска) */
     .controls-active {
       display: none;
       position: fixed;
@@ -94,10 +85,7 @@
       align-items: center;
     }
 
-    body.reading-mode .controls-active {
-      display: flex;
-      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
+    body.reading-mode .controls-active { display: flex; }
 
     button {
       padding: 12px 28px;
@@ -106,7 +94,7 @@
       border: none;
       border-radius: 12px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -117,22 +105,12 @@
       color: white;
       box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
     }
-    #btn-start:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6); }
+    #btn-start:hover { transform: translateY(-2px); }
 
-    .btn-action {
-      padding: 10px 20px;
-      font-size: 0.95rem;
-      border-radius: 30px;
-    }
-
+    .btn-action { padding: 10px 20px; font-size: 0.95rem; border-radius: 30px; }
     #btn-pause { background: #334155; color: #f8fafc; }
-    #btn-pause:hover { background: #475569; }
-
     #btn-stop { background: #dc2626; color: #f8fafc; }
-    #btn-stop:hover { background: #b91c1c; }
-
     #btn-reset { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
-    #btn-reset:hover { background: #334155; color: #f8fafc; }
 
     .status-indicator {
       display: flex;
@@ -145,7 +123,6 @@
     .dot { width: 10px; height: 10px; border-radius: 50%; background-color: #64748b; }
     .dot.active { background-color: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
 
-    /* Область чтения текста */
     .reader-box {
       background: var(--card-bg);
       border-radius: 20px;
@@ -155,7 +132,7 @@
       scroll-behavior: smooth;
       box-shadow: inset 0 2px 15px rgba(0, 0, 0, 0.6);
       border: 1px solid #1e293b;
-      transition: all 0.4s ease;
+      transition: all 0.3s ease;
     }
 
     body.reading-mode .reader-box {
@@ -170,7 +147,6 @@
       line-height: 2.3;
       word-spacing: 4px;
       color: var(--text-color);
-      transition: font-size 0.3s ease;
     }
 
     body.reading-mode .text-content {
@@ -181,7 +157,7 @@
     .word {
       padding: 4px 8px;
       border-radius: 8px;
-      transition: all 0.15s ease;
+      transition: background-color 0.05s ease, color 0.05s ease, transform 0.05s ease;
       display: inline-block;
     }
 
@@ -195,12 +171,10 @@
       transform: scale(1.06);
     }
 
-    /* Подсветка ошибки произношения */
     .word.error-word {
       color: var(--error-color);
       background-color: var(--error-bg);
       font-weight: 700;
-      animation: shake 0.3s ease;
       box-shadow: 0 0 16px rgba(239, 68, 68, 0.7);
     }
 
@@ -213,17 +187,6 @@
       border-radius: 10px;
       border: 1px dashed #334155;
     }
-
-    @keyframes slideUp {
-      from { transform: translate(-50%, 40px); opacity: 0; }
-      to { transform: translate(-50%, 0); opacity: 1; }
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-4px); }
-      75% { transform: translateX(4px); }
-    }
   </style>
 </head>
 <body>
@@ -231,13 +194,11 @@
 <div class="container">
   <header>
     <h1>📜 Интерактивный суфлер</h1>
-    <p class="subtitle">Читайте текст Гоголя вслух — сайт проверит произношение, подсветит ошибки и прокрутит текст</p>
+    <p class="subtitle">Сверхбыстрое распознавание голоса без задержек</p>
   </header>
 
   <div class="controls-top">
-    <button id="btn-start">
-      <span>🎤</span> Начать чтение
-    </button>
+    <button id="btn-start"><span>🎤</span> Начать чтение</button>
     <button id="btn-reset">🔄 Сбросить</button>
 
     <div class="status-indicator">
@@ -247,7 +208,7 @@
   </div>
 
   <div class="hint-panel">
-    💡 Если вы произнесете слово с ошибкой, суфлер выделит его <b>красным</b> цветом, показывая, где именно вы ошиблись.
+    💡 Если вы опередите текст или ошибетесь, суфлер мгновенно перескочит на нужное слово.
   </div>
 
   <div class="reader-box" id="reader-box">
@@ -255,14 +216,13 @@
   </div>
 </div>
 
-<!-- Плавающая панель снизу во время чтения -->
 <div class="controls-active">
   <div class="status-indicator" style="color: #fff;">
     <div class="dot active"></div>
     <span id="active-status-text">Слушаю вас...</span>
   </div>
   <button class="btn-action" id="btn-pause">⏸️ Пауза</button>
-  <button class="btn-action" id="btn-stop">⏹️️ Завершить</button>
+  <button class="btn-action" id="btn-stop">⏹ Завершить</button>
 </div>
 
 <script>
@@ -326,27 +286,24 @@
   function initSpeechRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('Ваш браузер не поддерживает распознавание речи. Используйте Google Chrome.');
+      alert('Используйте Google Chrome.');
       return;
     }
 
     recognition = new SpeechRecognition();
     recognition.lang = 'ru-RU';
     recognition.continuous = true;
-    recognition.interimResults = true;
+    recognition.interimResults = true; // Мгновенный перехват слов
 
     recognition.onresult = (event) => {
       if (isPaused) return;
 
-      let transcript = '';
+      // Берем самый свежий результат распознавания
+      let latestTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript + ' ';
+        latestTranscript += event.results[i][0].transcript + ' ';
       }
-      processSpokenText(transcript);
-    };
-
-    recognition.onerror = (event) => {
-      console.warn('Ошибка:', event.error);
+      processSpokenText(latestTranscript);
     };
 
     recognition.onend = () => {
@@ -356,33 +313,42 @@
     };
   }
 
-  // Анализ произношения (сравнение сказанного с ожидаемым словом)
-  function processSpokenText(spokenTranscript) {
-    const spokenWords = spokenTranscript.split(/\s+/).map(normalizeWord).filter(w => w.length > 0);
+  function processSpokenText(transcript) {
+    const spokenWords = transcript.split(/\s+/).map(normalizeWord).filter(w => w.length > 0);
     if (spokenWords.length === 0) return;
 
-    const latestSpoken = spokenWords[spokenWords.length - 1]; // Берем последнее сказанное слово
-    const targetWord = wordsData[currentIndex]?.normalized;
+    // Берем последние несколько произнесенных слов для анализа
+    const recentSpoken = spokenWords.slice(-3);
+    
+    // Расширенное окно поиска (до 8 слов вперед), чтобы не отставать, если вы ускорились
+    const searchWindow = 8;
 
-    if (!targetWord) return;
+    for (let spoken of recentSpoken) {
+      if (spoken.length < 2) continue; // Пропускаем слишком короткие звуки
 
-    // Сравнение: если сказанное совпадает с текущим словом (или похороже по буквам)
-    if (latestSpoken === targetWord || (latestSpoken.length > 3 && targetWord.startsWith(latestSpoken))) {
-      // Верное произношение
-      currentIndex++;
-      updateHighlights();
-    } else {
-      // Неправильное произношение / ошибка диктора
-      // Подсвечиваем текущее слово красным цветом ошибки
-      const currentSpan = wordsData[currentIndex].element;
-      currentSpan.classList.add('error-word');
-      activeStatusText.textContent = `Ошибка! Ожидалось: "${wordsData[currentIndex].element.textContent}"`;
+      for (let offset = 0; offset < searchWindow; offset++) {
+        const targetIdx = currentIndex + offset;
+        if (targetIdx >= wordsData.length) break;
 
-      setTimeout(() => {
-        if (!isPaused && isListening) {
-          activeStatusText.textContent = 'Слушаю вас...';
+        const targetWord = wordsData[targetIdx].normalized;
+
+        if (targetWord && (spoken === targetWord || targetWord.startsWith(spoken) || spoken.startsWith(targetWord))) {
+          // Нашли совпадение! Перепрыгиваем сразу на нужное слово
+          currentIndex = targetIdx + 1;
+          updateHighlights();
+          return;
         }
-      }, 1500);
+      }
+    }
+
+    // Если ни одно из последних слов не совпало с текущим — подсвечиваем ошибку на текущем слове
+    const currentSpan = wordsData[currentIndex]?.element;
+    if (currentSpan && !currentSpan.classList.contains('error-word')) {
+      currentSpan.classList.add('error-word');
+      activeStatusText.textContent = `Ошибка произношения!`;
+      setTimeout(() => {
+        if (!isPaused && isListening) activeStatusText.textContent = 'Слушаю вас...';
+      }, 1000);
     }
   }
 
@@ -412,7 +378,6 @@
     statusText.textContent = 'Остановлено';
   }
 
-  // Кнопки управления
   btnStart.addEventListener('click', startListening);
 
   btnPause.addEventListener('click', () => {
