@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Премиум Суфлер — Гоголь "Русь"</title>
+  <style>
+    :root {
+      --bg: #07090e;
+      --surface: #101622;
+      --surface-hover: #172133;
+      --border: #1e293b;
+      --border-glow: rgba(56, 189, 248, 0.25);
+      --text-main: #f1f5f9;
+      --text-muted: #64748b;
+      --text-read: #334155;
+      --accent: #38bdf8;
+      --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+      --target-bg: rgba(56, 189, 248, 0.15);
+      --target-border: rgba(56, 189, 248, 0.6);
+      --target-text: #38bdf8;
+      --error-bg: rgba(239, 68, 68, 0.15);
+      --error-border: rgba(239, 68, 68, 0.6);
+      --error-text: #fca5a5;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      overflow-x: hidden;
+      transition: background-color 0.4s ease;
+    }
+
+    /* Фоновые мягкие градиентные пятна */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: -10%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.04) 0%, rgba(0,0,0,0) 70%);
+      z-index: -1;
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -20%;
+      right: -10%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.04) 0%, rgba(0,0,0,0) 70%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1050px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    body.reading-mode header,
+    body.reading-mode .controls-top,
+    body.reading-mode .hint-panel {
+      display: none;
+    }
+
+    header { text-align: center; padding: 10px 0; }
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 8px;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: var(--text-muted); font-size: 1.05rem; }
+
+    /* Панель управления */
+    .controls-top {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      background: var(--surface);
+      padding: 20px 24px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border);
+    }
+
+    /* Плавающая панель при чтении */
+    .controls-active {
+      display: none;
+      position: fixed;
+      bottom: 35px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(16, 22, 34, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 14px 28px;
+      border-radius: 60px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+      border: 1px solid var(--border);
+      gap: 20px;
+      z-index: 100;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    body.reading-mode .controls-active { display: flex; }
+
+    button {
+      padding: 12px 26px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #btn-start {
+      background: var(--accent-gradient);
+      color: #07090e;
+      box-shadow: 0 8px 25px rgba(56, 189, 248, 0.3);
+    }
+    #btn-start:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(56, 189, 248, 0.4); }
+
+    .btn-action { padding: 10px 20px; font-size: 0.9rem; border-radius: 30px; }
+    #btn-pause { background: #1e293b; color: #f8fafc; border: 1px solid #334155; }
+    #btn-pause:hover { background: #334155; }
+    
+    #btn-stop { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+    #btn-stop:hover { background: rgba(239, 68, 68, 0.25); }
+
+    #btn-reset { background: var(--surface-hover); color: var(--text-muted); border: 1px solid var(--border); }
+    #btn-reset:hover { color: var(--text-main); }
+    
+    .tts-toggle {
+      background: var(--surface-hover);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      font-size: 0.9rem;
+      padding: 12px 20px;
+      border-radius: 14px;
+    }
+    .tts-toggle:hover { border-color: var(--border-glow); color: var(--text-main); }
+    .tts-toggle.active {
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--text-muted); transition: all 0.3s ease; }
+    .dot.active { background-color: #10b981; box-shadow: 0 0 12px #10b981; }
+
+    /* Читалка */
+    .reader-box {
+      background: var(--surface);
+      border-radius: 24px;
+      padding: 50px;
+      height: 560px;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      box-shadow: inset 0 2px 20px rgba(0, 0, 0, 0.6), 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border);
+      transition: all 0.4s ease;
+    }
+
+    body.reading-mode .reader-box {
+      height: 75vh;
+      padding: 70px 60px;
+      background: #0a0e17;
+      border-color: #26354f;
+      box-shadow: inset 0 4px 30px rgba(0, 0, 0, 0.8), 0 25px 50px rgba(0, 0, 0, 0.7);
+    }
+
+    .text-content {
+      font-size: 1.5rem;
+      line-height: 2.5;
+      word-spacing: 4px;
+      color: var(--text-muted);
+    }
+
+    body.reading-mode .text-content {
+      font-size: 2rem;
+      line-height: 2.7;
+    }
+
+    .word {
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+      display: inline-block;
+      border: 1px solid transparent;
+    }
+
+    .word.read { 
+      color: var(--text-read); 
+      opacity: 0.6; 
+    }
+    
+    .word.next-target {
+      color: var(--target-text);
+      background-color: var(--target-bg);
+      border-color: var(--target-border);
+      font-weight: 700;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+      transform: scale(1.04);
+    }
+
+    .word.error-word {
+      color: var(--error-text);
+      background-color: var(--error-bg);
+      border-color: var(--error-border);
+      font-weight: 700;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+    }
+
+    .hint-panel {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      text-align: center;
+      background: var(--surface);
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px dashed var(--border);
+    }
+
+    /* Кастомизация скроллбара */
+    .reader-box::-webkit-scrollbar { width: 8px; }
+    .reader-box::-webkit-scrollbar-track { background: transparent; }
+    .reader-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .reader-box::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>📜 Интерактивный суфлер</h1>
+    <p class="subtitle">Умная подсветка с фоновым озвучиванием следующего слова</p>
+  </header>
+
+  <div class="controls-top">
+    <button id="btn-start"><span>🎤</span> Начать чтение</button>
+    <button id="btn-reset">🔄 Сбросить</button>
+    <button id="btn-tts-toggle" class="tts-toggle">🎧 Озвучка в наушники: Выкл</button>
+
+    <div class="status-indicator">
+      <div class="dot" id="status-dot"></div>
+      <span id="status-text">Ожидание запуска</span>
+    </div>
+  </div>
+
+  <div class="hint-panel">
+    💡 Суфлер мгновенно синхронизируется по вашему голосу и нашептывает в наушники <b>следующее</b> слово, чтобы вы не сбились.
+  </div>
+
+  <div class="reader-box" id="reader-box">
+    <div class="text-content" id="text-container"></div>
+  </div>
+</div>
+
+<div class="controls-active">
+  <div class="status-indicator" style="color: #fff;">
+    <div class="dot active"></div>
+    <span id="active-status-text">Слушаю вас...</span>
+  </div>
+  <button class="btn-action tts-toggle" id="btn-tts-active">🎧 Наушники: Выкл</button>
+  <button class="btn-action" id="btn-pause">⏸️ Пауза</button>
+  <button class="btn-action" id="btn-stop">⏹ Завершить</button>
+</div>
+
+<script>
+  const sourceText = `Русь! Русь! вижу тебя, из моего чудного, прекрасного далека тебя вижу: бедно, разбросанно и неприютно в тебе; не развеселят, не испугают взоров дерзкие дива природы, венчанные дерзкими дивами искусства, города с многооконными высокими дворцами, вросшими в утесы, картинные дерева и плющи, вросшие в домы, в шуме и в вечной пыли водопадов; не опрокинется назад голова посмотреть на громоздящиеся без конца над нею и в вышине каменные глыбы; не блеснут сквозь наброшенные одна на другую темные арки, опутанные виноградными сучьями, плющами и несметными миллионами диких роз, не блеснут сквозь них вдали вечные линии сияющих гор, несущихся в серебряные ясные небеса. Открыто-пустынно и ровно все в тебе; как точки, как значки, неприметно торчат среди равнин невысокие твои города; ничто не обольстит и не очарует взора. Но какая же непостижимая, тайная сила влечет к тебе? Почему слышится и раздается немолчно в ушах твоя тоскливая, несущаяся по всей длине и ширине твоей, от моря до моря, песня? Что в ней, в этой песне? Что зовет, и рыдает, и хватает за сердце? Какие звуки болезненно лобзают, и стремятся в душу, и вьются около моего сердца? Русь! чего же ты хочешь от меня? какая непостижимая связь таится между нами? Что глядишь ты так, и зачем все, что ни есть в тебе, обратило на меня полные ожидания очи?.. И еще, полный недоумения, неподвижно стою я, а уже главу осенило грозное облако, тяжелое грядущими дождями, и онемела мысль пред твоим пространством. Что пророчит сей необъятный простор? Здесь ли, в тебе ли не родиться беспредельной мысли, когда ты сама без конца? Здесь ли не быть богатырю, когда есть место, где развернуться и пройтись ему? И грозно объемлет меня могучее пространство, страшною силою отразясь во глубине моей; неестественной властью осветились мои очи: у! какая сверкающая, чудная, незнакомая земле даль! Русь!..`;
+
+  let wordsData = [];
+  let currentIndex = 0;
+  let isListening = false;
+  let isPaused = false;
+  let ttsEnabled = false;
+  let recognition = null;
+
+  const textContainer = document.getElementById('text-container');
+  const btnStart = document.getElementById('btn-start');
+  const btnPause = document.getElementById('btn-pause');
+  const btnStop = document.getElementById('btn-stop');
+  const btnReset = document.getElementById('btn-reset');
+  const btnTtsToggle = document.getElementById('btn-tts-toggle');
+  const btnTtsActive = document.getElementById('btn-tts-active');
+  const statusDot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+  const activeStatusText = document.getElementById('active-status-text');
+
+  function normalizeWord(word) {
+    return word.toLowerCase().replace(/ё/g, 'е').replace(/[^а-яa-z0-9]/g, '');
+  }
+
+  function initText(rawText) {
+    textContainer.innerHTML = '';
+    wordsData = [];
+    currentIndex = 0;
+
+    rawText.trim().split(/\s+/).forEach((token, index) => {
+      const span = document.createElement('span');
+      span.className = 'word';
+      span.textContent = token;
+      textContainer.appendChild(span);
+      textContainer.appendChild(document.createTextNode(' '));
+
+      wordsData.push({
+        raw: token,
+        normalized: normalizeWord(token),
+        element: span
+      });
+    });
+
+    updateHighlights();
+  }
+
+  function updateHighlights() {
+    wordsData.forEach((item, idx) => {
+      item.element.classList.remove('read', 'next-target', 'error-word');
+      if (idx < currentIndex) {
+        item.element.classList.add('read');
+      } else if (idx === currentIndex) {
+        item.element.classList.add('next-target');
+      }
+    });
+
+    if (currentIndex < wordsData.length) {
+      wordsData[currentIndex].element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  // Озвучиваем СЛЕДУЮЩЕЕ слово после того, которое только что было распознано
+  function speakNextWord(currentMatchedIndex) {
+    if (!ttsEnabled || !('speechSynthesis' in window)) return;
+    
+    const nextIdx = currentMatchedIndex + 1;
+    if (nextIdx >= wordsData.length) return;
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(wordsData[nextIdx].raw);
+    utterance.lang = 'ru-RU';
+    utterance.rate = 1.15; // Чуть динамичнее
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function toggleTts() {
+    ttsEnabled = !ttsEnabled;
+    const text = ttsEnabled ? '🎧 Озвучка в наушники: Вкл' : '🎧 Озвучка в наушники: Выкл';
+    btnTtsToggle.textContent = text;
+    btnTtsActive.textContent = text;
+    
+    if (ttsEnabled) {
+      btnTtsToggle.classList.add('active');
+      btnTtsActive.classList.add('active');
+    } else {
+      btnTtsToggle.classList.remove('active');
+      btnTtsActive.classList.remove('active');
+    }
+  }
+
+  function initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Ваш браузер не поддерживает распознавание речи. Используйте Google Chrome.');
+      return;
+    }
+
+    recognition = new SpeechRecognition();
+    recognition.lang = 'ru-RU';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event) => {
+      if (isPaused) return;
+
+      let latestTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        latestTranscript += event.results[i][0].transcript + ' ';
+      }
+      processSpokenText(latestTranscript);
+    };
+
+    recognition.onerror = (event) => {
+      console.warn('Ошибка:', event.error);
+    };
+
+    recognition.onend = () => {
+      if (isListening && !isPaused) {
+        recognition.start();
+      }
+    };
+  }
+
+  function processSpokenText(transcript) {
+    const spokenWords = transcript.split(/\s+/).map(normalizeWord).filter(w => w.length > 0);
+    if (spokenWords.length === 0) return;
+
+    const recentSpoken = spokenWords.slice(-3);
+    const searchWindow = 8;
+
+    for (let spoken of recentSpoken) {
+      if (spoken.length < 2) continue;
+
+      for (let offset = 0; offset < searchWindow; offset++) {
+        const targetIdx = currentIndex + offset;
+        if (targetIdx >= wordsData.length) break;
+
+        const targetWord = wordsData[targetIdx].normalized;
+
+        if (targetWord && (spoken === targetWord || targetWord.startsWith(spoken) || spoken.startsWith(targetWord))) {
+          // Сначала озвучиваем СЛЕДУЮЩЕЕ слово после совпавшего
+          speakNextWord(targetIdx);
+
+          currentIndex = targetIdx + 1;
+          updateHighlights();
+          return;
+        }
+      }
+    }
+
+    const currentSpan = wordsData[currentIndex]?.element;
+    if (currentSpan && !currentSpan.classList.contains('error-word')) {
+      currentSpan.classList.add('error-word');
+      activeStatusText.textContent = `Ошибка произношения!`;
+      setTimeout(() => {
+        if (!isPaused && isListening) activeStatusText.textContent = 'Слушаю вас...';
+      }, 1000);
+    }
+  }
+
+  function startListening() {
+    if (!recognition) initSpeechRecognition();
+    if (!recognition) return;
+
+    try {
+      recognition.start();
+      isListening = true;
+      isPaused = false;
+      document.body.classList.add('reading-mode');
+      statusDot.classList.add('active');
+      statusText.textContent = 'Идет чтение...';
+      activeStatusText.textContent = 'Слушаю вас...';
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function stopListening() {
+    isListening = false;
+    isPaused = false;
+    if (recognition) recognition.stop();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    document.body.classList.remove('reading-mode');
+    statusDot.classList.remove('active');
+    statusText.textContent = 'Остановлено';
+  }
+
+  btnStart.addEventListener('click', startListening);
+  btnTtsToggle.addEventListener('click', toggleTts);
+  btnTtsActive.addEventListener('click', toggleTts);
+
+  btnPause.addEventListener('click', () => {
+    isPaused = !isPaused;
+    if (isPaused) {
+      btnPause.innerHTML = '▶️ Продолжить';
+      activeStatusText.textContent = 'На паузе';
+    } else {
+      btnPause.innerHTML = '⏸️ Пауза';
+      activeStatusText.textContent = 'Слушаю вас...';
+    }
+  });
+
+  btnStop.addEventListener('click', stopListening);
+
+  btnReset.addEventListener('click', () => {
+    currentIndex = 0;
+    updateHighlights();
+  });
+
+  initText(sourceText);
+</script>
+</body>
+</html>
