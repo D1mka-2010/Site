@@ -2,124 +2,226 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Суфлёр</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
-    --bg: #0f1419;
-    --surface: #1a2332;
-    --border: #2a3547;
-    --text: #e8eef7;
-    --muted: #8b97a8;
-    --read: #4a5568;
+    --bg: #0a0e14;
+    --bg-grad-1: rgba(74, 158, 255, 0.08);
+    --bg-grad-2: rgba(139, 92, 246, 0.08);
+    --surface: rgba(22, 30, 44, 0.85);
+    --surface-solid: #161e2c;
+    --border: rgba(255, 255, 255, 0.06);
+    --text: #eef3fa;
+    --muted: #7d8a9e;
+    --read: #47536b;
     --accent: #4a9eff;
+    --accent-2: #8b5cf6;
     --error: #f87171;
+    --radius: 26px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
 
   html, body {
     height: 100%;
     overflow: hidden;
     background: var(--bg);
     color: var(--text);
-    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Верхняя тонкая плашка со статусом */
-  .topbar {
+  /* Красивый фон с мягкими градиентными пятнами */
+  body::before,
+  body::after {
+    content: '';
     position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 40px;
+    width: 60vw;
+    height: 60vw;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.9;
+  }
+  body::before {
+    top: -20vw;
+    left: -15vw;
+    background: radial-gradient(circle, var(--bg-grad-1) 0%, transparent 70%);
+  }
+  body::after {
+    bottom: -25vw;
+    right: -15vw;
+    background: radial-gradient(circle, var(--bg-grad-2) 0%, transparent 70%);
+  }
+
+  /* Верхняя плашка статуса */
+  .statusbar {
+    position: fixed;
+    top: env(safe-area-inset-top, 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
-    font-size: 0.8rem;
+    padding: 8px 16px;
+    background: var(--surface);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 0.82rem;
+    font-weight: 500;
     color: var(--muted);
-    background: rgba(15, 20, 25, 0.85);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    z-index: 10;
-    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.01em;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    transition: color 0.25s ease;
+    margin-top: 8px;
   }
+  .statusbar.listening { color: #a7f3d0; }
+  .statusbar.error { color: #fca5a5; }
+
   .dot {
-    width: 7px; height: 7px; border-radius: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
     background: var(--muted);
-    transition: background 0.2s;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
   }
-  .dot.on { background: #10b981; box-shadow: 0 0 8px #10b981; }
-  .dot.err { background: var(--error); box-shadow: 0 0 8px var(--error); }
+  .dot.on {
+    background: #10b981;
+    box-shadow: 0 0 10px #10b981, 0 0 20px rgba(16, 185, 129, 0.4);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  .dot.err {
+    background: var(--error);
+    box-shadow: 0 0 10px var(--error);
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
 
   /* Читалка */
   .reader {
     position: fixed;
-    top: 40px;
-    bottom: 64px;
-    left: 0; right: 0;
+    top: 0;
+    bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
     overflow-y: auto;
-    padding: 20px 18px 40px;
-    scroll-behavior: auto; /* мы скроллим вручную */
+    padding: 90px 22px 80px;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    z-index: 1;
   }
-  .reader::-webkit-scrollbar { width: 0; }
+  .reader::-webkit-scrollbar { display: none; }
 
   .text {
-    font-size: 1.05rem;
-    line-height: 1.7;
+    font-size: 1.45rem;
+    line-height: 1.75;
+    font-weight: 400;
     color: var(--text);
-    word-spacing: 1px;
+    letter-spacing: -0.01em;
+    word-spacing: 2px;
+    max-width: 640px;
+    margin: 0 auto;
   }
 
   .word {
     display: inline;
-    transition: color 0.35s ease, opacity 0.35s ease;
-    padding: 1px 0;
+    transition: color 0.4s ease, opacity 0.4s ease;
   }
   .word.read {
     color: var(--read);
-    opacity: 0.55;
+    opacity: 0.5;
   }
 
-  /* Нижняя навигация */
+  /* Нижняя навигация — плавающая скруглённая капсула */
   .navbar {
     position: fixed;
-    bottom: 0; left: 0; right: 0;
-    height: 64px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 420px;
+    height: 68px;
     display: flex;
     align-items: center;
-    justify-content: space-around;
-    padding: 0 8px;
-    padding-bottom: env(safe-area-inset-bottom, 0);
-    z-index: 10;
+    justify-content: space-between;
+    padding: 8px;
+    background: var(--surface);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--border);
+    border-radius: 34px;
+    box-shadow:
+      0 20px 40px -10px rgba(0, 0, 0, 0.6),
+      0 0 0 0.5px rgba(255, 255, 255, 0.05) inset;
+    z-index: 20;
   }
+
   .navbtn {
     flex: 1;
+    height: 52px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 2px;
     background: transparent;
     border: none;
     color: var(--muted);
     font-size: 0.7rem;
     font-weight: 500;
-    padding: 8px 4px;
-    border-radius: 10px;
-    transition: color 0.15s, background 0.15s;
-    cursor: pointer;
     font-family: inherit;
+    border-radius: 26px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    letter-spacing: 0.01em;
   }
-  .navbtn .icon { font-size: 1.25rem; line-height: 1; }
-  .navbtn:active { background: rgba(74, 158, 255, 0.1); }
-  .navbtn.primary { color: var(--accent); }
-  .navbtn.active { color: var(--accent); }
-  .navbtn:disabled { opacity: 0.35; }
+  .navbtn .icon {
+    font-size: 1.3rem;
+    line-height: 1;
+    display: block;
+  }
+  .navbtn:active { transform: scale(0.94); }
 
-  /* Стартовый оверлей */
+  /* Центральная кнопка — акцентная */
+  .navbtn.main {
+    flex: 1.6;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    box-shadow:
+      0 8px 20px -4px rgba(74, 158, 255, 0.5),
+      0 0 0 0.5px rgba(255, 255, 255, 0.15) inset;
+    flex-direction: row;
+    gap: 8px;
+  }
+  .navbtn.main .icon { font-size: 1rem; }
+  .navbtn.main:active { transform: scale(0.96); }
+
+  /* Когда слушает — кнопка становится "стоп-пауза" */
+  .navbtn.main.paused {
+    background: linear-gradient(135deg, #475569 0%, #334155 100%);
+    box-shadow:
+      0 8px 20px -4px rgba(71, 85, 105, 0.4),
+      0 0 0 0.5px rgba(255, 255, 255, 0.1) inset;
+  }
+
+  /* Оверлей старта */
   .overlay {
     position: fixed;
     inset: 0;
@@ -128,34 +230,73 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 30px;
+    padding: 32px;
     text-align: center;
-    gap: 20px;
     z-index: 100;
-    transition: opacity 0.3s;
+    transition: opacity 0.35s ease, visibility 0.35s;
   }
-  .overlay.hidden { opacity: 0; pointer-events: none; }
-  .overlay h1 { font-size: 1.4rem; font-weight: 600; }
-  .overlay p { color: var(--muted); font-size: 0.9rem; line-height: 1.5; max-width: 320px; }
+  .overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .overlay .logo {
+    font-size: 3.5rem;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 8px 24px rgba(74, 158, 255, 0.4));
+  }
+  .overlay h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .overlay p {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    max-width: 300px;
+    margin-bottom: 32px;
+  }
   .bigbtn {
-    background: var(--accent);
-    color: #0f1419;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+    color: #ffffff;
     border: none;
-    border-radius: 14px;
-    padding: 14px 34px;
-    font-size: 1rem;
+    border-radius: 20px;
+    padding: 16px 44px;
+    font-size: 1.05rem;
     font-weight: 600;
-    cursor: pointer;
     font-family: inherit;
+    cursor: pointer;
+    box-shadow:
+      0 12px 32px -8px rgba(74, 158, 255, 0.6),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
   }
-  .bigbtn:active { transform: scale(0.97); }
+  .bigbtn:active {
+    transform: scale(0.96);
+    box-shadow:
+      0 6px 16px -6px rgba(74, 158, 255, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  }
+
+  /* Плавное появление текста */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .text { animation: fadeIn 0.6s ease-out; }
 </style>
 </head>
 <body>
 
-<div class="topbar">
+<div class="statusbar" id="statusbar">
   <div class="dot" id="dot"></div>
-  <span id="status">Готов</span>
+  <span id="status">Готов к чтению</span>
 </div>
 
 <div class="reader" id="reader">
@@ -163,53 +304,51 @@
 </div>
 
 <div class="navbar">
-  <button class="navbtn" id="btn-reset"><span class="icon">↺</span>Сначала</button>
-  <button class="navbtn" id="btn-prev"><span class="icon">‹</span>Назад</button>
-  <button class="navbtn primary" id="btn-toggle"><span class="icon">▶</span><span id="toggle-label">Старт</span></button>
-  <button class="navbtn" id="btn-next"><span class="icon">›</span>Вперёд</button>
-  <button class="navbtn" id="btn-tts"><span class="icon">🎧</span>Озвучка</button>
+  <button class="navbtn" id="btn-reset" aria-label="Сначала">
+    <span class="icon">↺</span>
+  </button>
+  <button class="navbtn main" id="btn-toggle">
+    <span class="icon" id="toggle-icon">▶</span>
+    <span id="toggle-label">Старт</span>
+  </button>
+  <button class="navbtn" id="btn-font" aria-label="Размер шрифта">
+    <span class="icon">Aa</span>
+  </button>
 </div>
 
 <div class="overlay" id="overlay">
-  <h1>📜 Суфлёр</h1>
-  <p>Читай вслух — текст сам будет плавно прокручиваться за твоим голосом.</p>
-  <p style="font-size:0.8rem;opacity:0.7">Нажми «Старт» и разреши доступ к микрофону.</p>
+  <div class="logo">📜</div>
+  <h1>Суфлёр</h1>
+  <p>Читай вслух — текст сам будет плавно плыть за твоим голосом</p>
   <button class="bigbtn" id="btn-go">Начать</button>
 </div>
 
 <script>
-// ================== ТЕКСТ ==================
 const SOURCE = `Русь! Русь! вижу тебя, из моего чудного, прекрасного далека тебя вижу: бедно, разбросанно и неприютно в тебе; не развеселят, не испугают взоров дерзкие дива природы, венчанные дерзкими дивами искусства, города с многооконными высокими дворцами, вросшими в утесы, картинные дерева и плющи, вросшие в домы, в шуме и в вечной пыли водопадов; не опрокинется назад голова посмотреть на громоздящиеся без конца над нею и в вышине каменные глыбы; не блеснут сквозь наброшенные одна на другую темные арки, опутанные виноградными сучьями, плющами и несметными миллионами диких роз, не блеснут сквозь них вдали вечные линии сияющих гор, несущихся в серебряные ясные небеса. Открыто-пустынно и ровно все в тебе; как точки, как значки, неприметно торчат среди равнин невысокие твои города; ничто не обольстит и не очарует взора. Но какая же непостижимая, тайная сила влечет к тебе? Почему слышится и раздается немолчно в ушах твоя тоскливая, несущаяся по всей длине и ширине твоей, от моря до моря, песня? Что в ней, в этой песне? Что зовет, и рыдает, и хватает за сердце? Какие звуки болезненно лобзают, и стремятся в душу, и вьются около моего сердца? Русь! чего же ты хочешь от меня? какая непостижимая связь таится между нами? Что глядишь ты так, и зачем все, что ни есть в тебе, обратило на меня полные ожидания очи?.. И еще, полный недоумения, неподвижно стою я, а уже главу осенило грозное облако, тяжелое грядущими дождями, и онемела мысль пред твоим пространством. Что пророчит сей необъятный простор? Здесь ли, в тебе ли не родиться беспредельной мысли, когда ты сама без конца? Здесь ли не быть богатырю, когда есть место, где развернуться и пройтись ему? И грозно объемлет меня могучее пространство, страшною силою отразясь во глубине моей; неестественной властью осветились мои очи: у! какая сверкающая, чудная, незнакомая земле даль! Русь!..`;
 
-// ================== СОСТОЯНИЕ ==================
 const state = {
   words: [],
   idx: 0,
   listening: false,
   paused: false,
-  tts: false,
-  lastAdvance: 0,       // время последнего продвижения
-  recentSpoken: [],     // окно последних распознанных слов
+  lastAdvance: 0,
+  fontScale: 1,
 };
 
-// ================== DOM ==================
 const $ = id => document.getElementById(id);
 const readerEl = $('reader');
 const textEl = $('text');
 const dotEl = $('dot');
 const statusEl = $('status');
+const statusbarEl = $('statusbar');
 const toggleBtn = $('btn-toggle');
+const toggleIcon = $('toggle-icon');
 const toggleLabel = $('toggle-label');
-const ttsBtn = $('btn-tts');
 
-// ================== УТИЛИТЫ ==================
 function normalize(w) {
-  return w.toLowerCase()
-    .replace(/ё/g, 'е')
-    .replace(/[^а-яa-z0-9]/g, '');
+  return w.toLowerCase().replace(/ё/g, 'е').replace(/[^а-яa-z0-9]/g, '');
 }
 
-// расстояние Левенштейна для нечёткого сравнения
 function lev(a, b) {
   if (a === b) return 0;
   if (!a.length) return b.length;
@@ -230,7 +369,6 @@ function lev(a, b) {
   return prev[n];
 }
 
-// порог похожести: чем короче слово, тем строже
 function isMatch(spoken, target) {
   if (!spoken || !target) return false;
   if (spoken === target) return true;
@@ -240,12 +378,10 @@ function isMatch(spoken, target) {
   return lev(spoken, target) <= 2;
 }
 
-// ================== ИНИЦИАЛИЗАЦИЯ ТЕКСТА ==================
 function initText(raw) {
   textEl.innerHTML = '';
   state.words = [];
   state.idx = 0;
-
   const tokens = raw.trim().split(/\s+/);
   tokens.forEach(tok => {
     const span = document.createElement('span');
@@ -253,36 +389,29 @@ function initText(raw) {
     span.textContent = tok;
     textEl.appendChild(span);
     textEl.appendChild(document.createTextNode(' '));
-    state.words.push({
-      raw: tok,
-      norm: normalize(tok),
-      el: span,
-    });
+    state.words.push({ raw: tok, norm: normalize(tok), el: span });
   });
   render();
 }
 
-// ================== ОТРИСОВКА (без выделения текущего слова) ==================
 function render() {
   state.words.forEach((w, i) => {
     w.el.classList.toggle('read', i < state.idx);
   });
-  // плавно центрируем текущее слово
   scrollToWord(state.idx, true);
 }
 
-// ================== ПЛАВНЫЙ СКРОЛЛ ==================
 let scrollAnim = null;
 function scrollToWord(idx, smooth) {
   if (idx >= state.words.length) idx = state.words.length - 1;
   if (idx < 0) idx = 0;
-  const el = state.words[idx].el;
+  const el = state.words[idx]?.el;
   if (!el) return;
 
   const readerRect = readerEl.getBoundingClientRect();
   const elRect = el.getBoundingClientRect();
-  // хотим, чтобы слово было примерно на 35% высоты читалки (чуть выше центра)
-  const targetOffset = readerRect.height * 0.35;
+  // слово ставим на 38% высоты — чуть выше центра
+  const targetOffset = readerRect.height * 0.38;
   const currentOffset = elRect.top - readerRect.top;
   const delta = currentOffset - targetOffset;
   const targetScroll = readerEl.scrollTop + delta;
@@ -295,10 +424,9 @@ function scrollToWord(idx, smooth) {
 
   const start = readerEl.scrollTop;
   const end = targetScroll;
-  const dur = 420;
+  const dur = 480;
   const t0 = performance.now();
-
-  function ease(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2; }
+  const ease = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
 
   function step(now) {
     const p = Math.min(1, (now - t0) / dur);
@@ -309,7 +437,6 @@ function scrollToWord(idx, smooth) {
   scrollAnim = requestAnimationFrame(step);
 }
 
-// ================== РАСПОЗНАВАНИЕ ==================
 let recognition = null;
 let restartTimer = null;
 
@@ -325,13 +452,10 @@ function initRecognition() {
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
 
-  recognition.onstart = () => {
-    setStatus('Слушаю...', 'on');
-  };
+  recognition.onstart = () => setStatus('Слушаю...', 'on');
 
   recognition.onresult = (e) => {
     if (state.paused || !state.listening) return;
-    // берём только последний финальный/интерim результат
     let text = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
       text += e.results[i][0].transcript + ' ';
@@ -344,7 +468,7 @@ function initRecognition() {
       setStatus('Нет доступа к микрофону', 'err');
       stopAll();
     } else if (e.error === 'no-speech') {
-      // нормально, просто тишина
+      // ок, тишина
     } else {
       setStatus('Ошибка: ' + e.error, 'err');
     }
@@ -352,7 +476,6 @@ function initRecognition() {
 
   recognition.onend = () => {
     if (state.listening && !state.paused) {
-      // защита от гонок — рестарт с задержкой
       clearTimeout(restartTimer);
       restartTimer = setTimeout(() => {
         try { recognition.start(); } catch (_) {}
@@ -362,80 +485,53 @@ function initRecognition() {
   return true;
 }
 
-// ================== ЛОГИКА СИНХРОНИЗАЦИИ ==================
-const ADVANCE_COOLDOWN = 60;      // мс — не чаще чем раз в 60мс
-const SEARCH_WINDOW = 3;          // искать только в пределах +3 слов от текущего
+const ADVANCE_COOLDOWN = 60;
+const SEARCH_WINDOW = 3;
 
 function handleSpoken(transcript) {
   const spokenWords = transcript.split(/\s+/).map(normalize).filter(w => w.length >= 2);
   if (!spokenWords.length) return;
-
   const now = performance.now();
   if (now - state.lastAdvance < ADVANCE_COOLDOWN) return;
 
-  // ищем последнее произнесённое слово в ближайшем окне
   for (let s = spokenWords.length - 1; s >= 0; s--) {
     const spoken = spokenWords[s];
-
     for (let off = 0; off <= SEARCH_WINDOW; off++) {
       const targetIdx = state.idx + off;
       if (targetIdx >= state.words.length) break;
-
       const target = state.words[targetIdx].norm;
       if (!target) continue;
-
       if (isMatch(spoken, target)) {
-        // продвигаем ровно на 1 слово (не прыгаем через несколько)
         state.idx = targetIdx + 1;
         state.lastAdvance = now;
         render();
-        if (state.tts) speakWord(state.idx);
         return;
       }
     }
   }
 }
 
-// ================== TTS ==================
-let voicesReady = false;
-function pickVoice() {
-  const voices = speechSynthesis.getVoices();
-  return voices.find(v => v.lang.startsWith('ru')) || voices[0] || null;
-}
-if ('speechSynthesis' in window) {
-  speechSynthesis.onvoiceschanged = () => { voicesReady = true; };
-}
-
-function speakWord(idx) {
-  if (!state.tts || !('speechSynthesis' in window)) return;
-  if (idx >= state.words.length) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(state.words[idx].raw);
-  u.lang = 'ru-RU';
-  u.rate = 1.0;
-  u.volume = 0.9;
-  const v = pickVoice();
-  if (v) u.voice = v;
-  speechSynthesis.speak(u);
-}
-
-// ================== СТАТУС ==================
 function setStatus(text, mode) {
   statusEl.textContent = text;
   dotEl.classList.remove('on', 'err');
-  if (mode === 'on') dotEl.classList.add('on');
-  if (mode === 'err') dotEl.classList.add('err');
+  statusbarEl.classList.remove('listening', 'error');
+  if (mode === 'on') {
+    dotEl.classList.add('on');
+    statusbarEl.classList.add('listening');
+  } else if (mode === 'err') {
+    dotEl.classList.add('err');
+    statusbarEl.classList.add('error');
+  }
 }
 
-// ================== УПРАВЛЕНИЕ ==================
 function start() {
   if (!recognition && !initRecognition()) return;
   try { recognition.start(); } catch (_) {}
   state.listening = true;
   state.paused = false;
-  toggleBtn.querySelector('.icon').textContent = '⏸';
+  toggleIcon.textContent = '⏸';
   toggleLabel.textContent = 'Пауза';
-  toggleBtn.classList.add('active');
+  toggleBtn.classList.remove('paused');
   setStatus('Слушаю...', 'on');
 }
 
@@ -443,9 +539,9 @@ function pause() {
   state.paused = true;
   state.listening = false;
   try { recognition && recognition.stop(); } catch (_) {}
-  toggleBtn.querySelector('.icon').textContent = '▶';
+  toggleIcon.textContent = '▶';
   toggleLabel.textContent = 'Старт';
-  toggleBtn.classList.remove('active');
+  toggleBtn.classList.add('paused');
   setStatus('Пауза');
 }
 
@@ -453,14 +549,12 @@ function stopAll() {
   state.listening = false;
   state.paused = false;
   try { recognition && recognition.stop(); } catch (_) {}
-  if ('speechSynthesis' in window) speechSynthesis.cancel();
-  toggleBtn.querySelector('.icon').textContent = '▶';
+  toggleIcon.textContent = '▶';
   toggleLabel.textContent = 'Старт';
-  toggleBtn.classList.remove('active');
+  toggleBtn.classList.add('paused');
   setStatus('Остановлено');
 }
 
-// ================== СОБЫТИЯ ==================
 toggleBtn.addEventListener('click', () => {
   if (state.listening) pause();
   else start();
@@ -472,21 +566,15 @@ $('btn-reset').addEventListener('click', () => {
   readerEl.scrollTop = 0;
 });
 
-$('btn-prev').addEventListener('click', () => {
-  state.idx = Math.max(0, state.idx - 1);
-  render();
-});
-
-$('btn-next').addEventListener('click', () => {
-  state.idx = Math.min(state.words.length, state.idx + 1);
-  render();
-});
-
-ttsBtn.addEventListener('click', () => {
-  state.tts = !state.tts;
-  ttsBtn.classList.toggle('active', state.tts);
-  if (!state.tts && 'speechSynthesis' in window) speechSynthesis.cancel();
-  setStatus(state.tts ? 'Озвучка вкл' : 'Озвучка выкл');
+// Кнопка размера шрифта — переключает 3 ступени
+const FONT_STEPS = [1.45, 1.65, 1.85];
+let fontStep = 0;
+$('btn-font').addEventListener('click', () => {
+  fontStep = (fontStep + 1) % FONT_STEPS.length;
+  const size = FONT_STEPS[fontStep];
+  textEl.style.fontSize = size + 'rem';
+  // легкий haptic в Telegram
+  window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
 });
 
 $('btn-go').addEventListener('click', () => {
@@ -494,17 +582,18 @@ $('btn-go').addEventListener('click', () => {
   start();
 });
 
-// Telegram WebApp
+// Telegram WebApp init
 try {
   if (window.Telegram?.WebApp) {
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
     tg.disableVerticalSwipes?.();
+    tg.setHeaderColor?.('#0a0e14');
+    tg.setBackgroundColor?.('#0a0e14');
   }
 } catch (_) {}
 
-// init
 initText(SOURCE);
 </script>
 </body>
