@@ -7,79 +7,84 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   :root {
-    --bg: #0a0e14;
-    --bg-grad-1: rgba(74, 158, 255, 0.08);
-    --bg-grad-2: rgba(139, 92, 246, 0.08);
-    --surface: rgba(22, 30, 44, 0.85);
-    --border: rgba(255, 255, 255, 0.06);
+    --bg: #0b0f16;
+    --bg-soft: #0f1520;
+    --surface: rgba(20, 28, 42, 0.82);
+    --surface-solid: #141c2a;
+    --border: rgba(255, 255, 255, 0.07);
+    --border-strong: rgba(255, 255, 255, 0.12);
     --text: #eef3fa;
-    --muted: #7d8a9e;
-    --read: #47536b;
-    --accent: #4a9eff;
+    --muted: #7c8aa0;
+    --read: #3f4b60;
+    --accent: #5aa9ff;
     --accent-2: #8b5cf6;
     --error: #f87171;
+
+    --font-size: 1.5rem;
+    --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, Roboto, sans-serif;
   }
 
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    -webkit-tap-highlight-color: transparent;
-  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   html, body {
     height: 100%;
     overflow: hidden;
     background: var(--bg);
     color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, Roboto, sans-serif;
+    font-family: var(--font-family);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Мягкие градиентные пятна на фоне */
   body::before,
   body::after {
     content: '';
     position: fixed;
-    width: 60vw;
-    height: 60vw;
+    width: 65vw;
+    height: 65vw;
     border-radius: 50%;
-    filter: blur(80px);
+    filter: blur(90px);
     z-index: 0;
     pointer-events: none;
     opacity: 0.9;
   }
   body::before {
-    top: -20vw;
-    left: -15vw;
-    background: radial-gradient(circle, var(--bg-grad-1) 0%, transparent 70%);
+    top: -22vw;
+    left: -18vw;
+    background: radial-gradient(circle, rgba(90, 169, 255, 0.10) 0%, transparent 70%);
   }
   body::after {
-    bottom: -25vw;
-    right: -15vw;
-    background: radial-gradient(circle, var(--bg-grad-2) 0%, transparent 70%);
+    bottom: -28vw;
+    right: -18vw;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.10) 0%, transparent 70%);
   }
 
+  /* ===== Статус-бар сверху ===== */
   .statusbar {
     position: fixed;
-    top: env(safe-area-inset-top, 12px);
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
     left: 50%;
     transform: translateX(-50%);
     z-index: 20;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
+    gap: 9px;
+    padding: 9px 18px;
     background: var(--surface);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
     border: 1px solid var(--border);
     border-radius: 100px;
     font-size: 0.82rem;
     font-weight: 500;
     color: var(--muted);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.45),
+      0 1px 0 rgba(255, 255, 255, 0.04) inset;
     transition: color 0.25s ease;
-    margin-top: 8px;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
   }
   .statusbar.listening { color: #a7f3d0; }
   .statusbar.error { color: #fca5a5; }
@@ -94,26 +99,46 @@
   }
   .dot.on {
     background: #10b981;
-    box-shadow: 0 0 10px #10b981, 0 0 20px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 0 12px #10b981, 0 0 22px rgba(16, 185, 129, 0.45);
     animation: pulse 1.8s ease-in-out infinite;
   }
   .dot.err {
     background: var(--error);
-    box-shadow: 0 0 10px var(--error);
+    box-shadow: 0 0 12px var(--error);
   }
   @keyframes pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(0.85); }
+    50% { opacity: 0.55; transform: scale(0.82); }
   }
 
+  /* ===== Прогресс ===== */
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: transparent;
+    z-index: 30;
+    overflow: hidden;
+  }
+  .progress__bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+    transition: width 0.35s ease;
+    box-shadow: 0 0 12px rgba(90, 169, 255, 0.6);
+  }
+
+  /* ===== Читалка ===== */
   .reader {
     position: fixed;
     top: 0;
-    bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(126px + env(safe-area-inset-bottom, 0px));
     left: 0;
     right: 0;
     overflow-y: auto;
-    padding: 80px 22px 60px;
+    padding: 82px 22px 60px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     z-index: 1;
@@ -121,15 +146,16 @@
   .reader::-webkit-scrollbar { display: none; }
 
   .text {
-    font-size: 1.45rem;
-    line-height: 1.75;
+    font-size: var(--font-size);
+    line-height: 1.72;
     font-weight: 400;
     color: var(--text);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.012em;
     word-spacing: 2px;
     max-width: 640px;
     margin: 0 auto;
-    animation: fadeIn 0.6s ease-out;
+    animation: fadeIn 0.55s ease-out;
+    transition: font-size 0.25s ease, line-height 0.25s ease;
   }
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(8px); }
@@ -145,10 +171,10 @@
     opacity: 0.5;
   }
 
-  /* Первая подсказка — мягко пульсирует, пока не нажали старт */
+  /* Первая подсказка */
   .hint {
     position: fixed;
-    bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(116px + env(safe-area-inset-bottom, 0px));
     left: 50%;
     transform: translateX(-50%);
     font-size: 0.85rem;
@@ -158,40 +184,41 @@
     opacity: 1;
     transition: opacity 0.4s ease;
     white-space: nowrap;
-    animation: hintPulse 2.4s ease-in-out infinite;
+    animation: hintPulse 2.6s ease-in-out infinite;
   }
   .hint.hidden { opacity: 0; }
   @keyframes hintPulse {
-    0%, 100% { opacity: 0.5; }
+    0%, 100% { opacity: 0.45; }
     50% { opacity: 1; }
   }
 
+  /* ===== Нижняя капсула ===== */
   .navbar {
     position: fixed;
-    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
     left: 50%;
     transform: translateX(-50%);
     width: calc(100% - 32px);
-    max-width: 420px;
-    height: 68px;
+    max-width: 440px;
+    height: 72px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 8px;
     background: var(--surface);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid var(--border);
-    border-radius: 34px;
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid var(--border-strong);
+    border-radius: 36px;
     box-shadow:
-      0 20px 40px -10px rgba(0, 0, 0, 0.6),
-      0 0 0 0.5px rgba(255, 255, 255, 0.05) inset;
+      0 24px 48px -12px rgba(0, 0, 0, 0.7),
+      0 1px 0 rgba(255, 255, 255, 0.06) inset;
     z-index: 20;
   }
 
   .navbtn {
     flex: 1;
-    height: 52px;
+    height: 56px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -200,43 +227,200 @@
     background: transparent;
     border: none;
     color: var(--muted);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 500;
     font-family: inherit;
-    border-radius: 26px;
+    border-radius: 28px;
     cursor: pointer;
     transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    letter-spacing: 0.02em;
   }
   .navbtn .icon {
-    font-size: 1.3rem;
+    font-size: 1.35rem;
     line-height: 1;
     display: block;
   }
-  .navbtn:active { transform: scale(0.94); }
+  .navbtn:active { transform: scale(0.93); background: rgba(255, 255, 255, 0.05); }
 
   .navbtn.main {
-    flex: 1.6;
+    flex: 1.7;
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
     color: #ffffff;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     box-shadow:
-      0 8px 20px -4px rgba(74, 158, 255, 0.5),
-      0 0 0 0.5px rgba(255, 255, 255, 0.15) inset;
+      0 10px 24px -6px rgba(90, 169, 255, 0.55),
+      0 0 0 0.5px rgba(255, 255, 255, 0.18) inset;
     flex-direction: row;
-    gap: 8px;
+    gap: 9px;
+    letter-spacing: 0;
   }
-  .navbtn.main .icon { font-size: 1rem; }
+  .navbtn.main .icon { font-size: 1.05rem; }
   .navbtn.main:active { transform: scale(0.96); }
   .navbtn.main.paused {
-    background: linear-gradient(135deg, #475569 0%, #334155 100%);
+    background: linear-gradient(135deg, #4b5a72 0%, #334155 100%);
     box-shadow:
-      0 8px 20px -4px rgba(71, 85, 105, 0.4),
-      0 0 0 0.5px rgba(255, 255, 255, 0.1) inset;
+      0 10px 24px -6px rgba(71, 85, 105, 0.5),
+      0 0 0 0.5px rgba(255, 255, 255, 0.12) inset;
+  }
+
+  /* ===== Bottom Sheet выбора шрифта ===== */
+  .sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 90;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s;
+  }
+  .sheet-backdrop.open { opacity: 1; visibility: visible; }
+
+  .sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+    background: var(--surface-solid);
+    border-radius: 28px 28px 0 0;
+    border-top: 1px solid var(--border-strong);
+    padding: 12px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6);
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  .sheet.open { transform: translateY(0); }
+
+  .sheet__handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    margin: 0 auto 18px;
+  }
+
+  .sheet__title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .sheet__section { margin-bottom: 22px; }
+  .sheet__section:last-child { margin-bottom: 0; }
+
+  /* Размер шрифта */
+  .size-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px 16px;
+  }
+  .size-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 1.1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .size-btn:active { transform: scale(0.92); background: rgba(255, 255, 255, 0.1); }
+
+  .size-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+  }
+  .size-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(90, 169, 255, 0.5);
+  }
+  .size-slider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(90, 169, 255, 0.5);
+  }
+  .size-value {
+    min-width: 44px;
+    text-align: right;
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Шрифты */
+  .fonts {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .font-opt {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 14px;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: all 0.18s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .font-opt:active { transform: scale(0.98); }
+  .font-opt.active {
+    border-color: rgba(90, 169, 255, 0.6);
+    background: rgba(90, 169, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(90, 169, 255, 0.08);
+  }
+  .font-opt__name {
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .font-opt__preview {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.02em;
   }
 </style>
 </head>
 <body>
+
+<div class="progress"><div class="progress__bar" id="progressbar"></div></div>
 
 <div class="statusbar" id="statusbar">
   <div class="dot" id="dot"></div>
@@ -257,9 +441,47 @@
     <span class="icon" id="toggle-icon">▶</span>
     <span id="toggle-label">Старт</span>
   </button>
-  <button class="navbtn" id="btn-font" aria-label="Размер шрифта">
+  <button class="navbtn" id="btn-font" aria-label="Шрифт">
     <span class="icon">Aa</span>
   </button>
+</div>
+
+<!-- ===== Bottom Sheet ===== -->
+<div class="sheet-backdrop" id="sheet-backdrop"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet__handle"></div>
+
+  <div class="sheet__section">
+    <div class="sheet__title">Размер текста</div>
+    <div class="size-row">
+      <button class="size-btn" id="size-minus">−</button>
+      <input type="range" class="size-slider" id="size-slider" min="18" max="40" step="1" value="24">
+      <button class="size-btn" id="size-plus">+</button>
+      <span class="size-value" id="size-value">24px</span>
+    </div>
+  </div>
+
+  <div class="sheet__section">
+    <div class="sheet__title">Шрифт</div>
+    <div class="fonts" id="fonts">
+      <button class="font-opt active" data-font="system">
+        <span class="font-opt__name" style="font-family: -apple-system, system-ui, sans-serif;">Системный</span>
+        <span class="font-opt__preview">SF Pro / Roboto</span>
+      </button>
+      <button class="font-opt" data-font="serif">
+        <span class="font-opt__name" style="font-family: Georgia, 'Times New Roman', serif;">С засечками</span>
+        <span class="font-opt__preview">Georgia</span>
+      </button>
+      <button class="font-opt" data-font="mono">
+        <span class="font-opt__name" style="font-family: 'SF Mono', Menlo, monospace;">Моно</span>
+        <span class="font-opt__preview">SF Mono / Menlo</span>
+      </button>
+      <button class="font-opt" data-font="rounded">
+        <span class="font-opt__name" style="font-family: 'SF Pro Rounded', 'Nunito', system-ui, sans-serif;">Округлый</span>
+        <span class="font-opt__preview">Rounded</span>
+      </button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -271,6 +493,8 @@ const state = {
   listening: false,
   paused: false,
   lastAdvance: 0,
+  recent: [],           // буфер последних распознанных слов (нормализованных)
+  recentConsumed: 0,    // сколько последних слов уже "съедено"
 };
 
 const $ = id => document.getElementById(id);
@@ -283,6 +507,9 @@ const toggleBtn = $('btn-toggle');
 const toggleIcon = $('toggle-icon');
 const toggleLabel = $('toggle-label');
 const hintEl = $('hint');
+const progressBar = $('progressbar');
+
+/* ================= утилиты ================= */
 
 function normalize(w) {
   return w.toLowerCase().replace(/ё/g, 'е').replace(/[^а-яa-z0-9]/g, '');
@@ -294,8 +521,7 @@ function lev(a, b) {
   if (!b.length) return a.length;
   if (Math.abs(a.length - b.length) > 2) return 99;
   const m = a.length, n = b.length;
-  let prev = new Array(n + 1);
-  let curr = new Array(n + 1);
+  let prev = new Array(n + 1), curr = new Array(n + 1);
   for (let j = 0; j <= n; j++) prev[j] = j;
   for (let i = 1; i <= m; i++) {
     curr[0] = i;
@@ -308,19 +534,24 @@ function lev(a, b) {
   return prev[n];
 }
 
-function isMatch(spoken, target) {
-  if (!spoken || !target) return false;
-  if (spoken === target) return true;
-  const len = Math.min(spoken.length, target.length);
-  if (len <= 3) return spoken === target;
-  if (len <= 5) return lev(spoken, target) <= 1;
-  return lev(spoken, target) <= 2;
+function wordMatch(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const len = Math.min(a.length, b.length);
+  if (len <= 3) return false;
+  if (len <= 5) return lev(a, b) <= 1;
+  return lev(a, b) <= 2;
 }
+
+/* ================= инициализация ================= */
 
 function initText(raw) {
   textEl.innerHTML = '';
   state.words = [];
   state.idx = 0;
+  state.recent = [];
+  state.recentConsumed = 0;
+
   const tokens = raw.trim().split(/\s+/);
   tokens.forEach(tok => {
     const span = document.createElement('span');
@@ -337,8 +568,12 @@ function render() {
   state.words.forEach((w, i) => {
     w.el.classList.toggle('read', i < state.idx);
   });
+  const total = state.words.length || 1;
+  progressBar.style.width = ((state.idx / total) * 100).toFixed(2) + '%';
   scrollToWord(state.idx, true);
 }
+
+/* ================= плавный скролл ================= */
 
 let scrollAnim = null;
 function scrollToWord(idx, smooth) {
@@ -355,14 +590,11 @@ function scrollToWord(idx, smooth) {
   const targetScroll = readerEl.scrollTop + delta;
 
   if (scrollAnim) cancelAnimationFrame(scrollAnim);
-  if (!smooth) {
-    readerEl.scrollTop = targetScroll;
-    return;
-  }
+  if (!smooth) { readerEl.scrollTop = targetScroll; return; }
 
   const start = readerEl.scrollTop;
   const end = targetScroll;
-  const dur = 480;
+  const dur = 520;
   const t0 = performance.now();
   const ease = t => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
 
@@ -375,15 +607,14 @@ function scrollToWord(idx, smooth) {
   scrollAnim = requestAnimationFrame(step);
 }
 
+/* ================= распознавание ================= */
+
 let recognition = null;
 let restartTimer = null;
 
 function initRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    setStatus('Распознавание не поддерживается', 'err');
-    return false;
-  }
+  if (!SR) { setStatus('Распознавание не поддерживается', 'err'); return false; }
   recognition = new SR();
   recognition.lang = 'ru-RU';
   recognition.continuous = true;
@@ -402,63 +633,89 @@ function initRecognition() {
   };
 
   recognition.onerror = (e) => {
-    if (e.error === 'not-allowed') {
-      setStatus('Нет доступа к микрофону', 'err');
-      stopAll();
-    } else if (e.error === 'no-speech') {
-    } else {
-      setStatus('Ошибка: ' + e.error, 'err');
-    }
+    if (e.error === 'not-allowed') { setStatus('Нет доступа к микрофону', 'err'); stopAll(); }
+    else if (e.error === 'no-speech') { /* ok */ }
+    else { setStatus('Ошибка: ' + e.error, 'err'); }
   };
 
   recognition.onend = () => {
     if (state.listening && !state.paused) {
       clearTimeout(restartTimer);
-      restartTimer = setTimeout(() => {
-        try { recognition.start(); } catch (_) {}
-      }, 300);
+      restartTimer = setTimeout(() => { try { recognition.start(); } catch (_) {} }, 300);
     }
   };
   return true;
 }
 
-const ADVANCE_COOLDOWN = 60;
-const SEARCH_WINDOW = 3;
+/* ================= КОНТЕКСТНЫЙ МАТЧИНГ ================= */
+
+const CONTEXT_LEN = 3;       // сколько последних слов держим в буфере
+const SEARCH_WINDOW = 4;     // на сколько слов вперёд смотрим
 
 function handleSpoken(transcript) {
   const spokenWords = transcript.split(/\s+/).map(normalize).filter(w => w.length >= 2);
   if (!spokenWords.length) return;
-  const now = performance.now();
-  if (now - state.lastAdvance < ADVANCE_COOLDOWN) return;
 
-  for (let s = spokenWords.length - 1; s >= 0; s--) {
-    const spoken = spokenWords[s];
-    for (let off = 0; off <= SEARCH_WINDOW; off++) {
-      const targetIdx = state.idx + off;
-      if (targetIdx >= state.words.length) break;
-      const target = state.words[targetIdx].norm;
-      if (!target) continue;
-      if (isMatch(spoken, target)) {
-        state.idx = targetIdx + 1;
-        state.lastAdvance = now;
-        render();
-        return;
+  // Добавляем все новые слова в буфер
+  for (const w of spokenWords) {
+    state.recent.push(w);
+  }
+  // буфер не длиннее CONTEXT_LEN + небольшой запас
+  if (state.recent.length > CONTEXT_LEN * 3) {
+    const drop = state.recent.length - CONTEXT_LEN * 3;
+    state.recent.splice(0, drop);
+  }
+
+  tryAdvance();
+}
+
+function tryAdvance() {
+  let advanced = true;
+  let safety = 0;
+
+  while (advanced && safety < 50) {
+    advanced = false;
+    safety++;
+
+    // Пробуем от самого длинного контекста к короткому
+    for (let ctx = CONTEXT_LEN; ctx >= 1; ctx--) {
+      if (state.recent.length < ctx) continue;
+
+      const spokenCtx = state.recent.slice(-ctx);
+      // Ищем в тексте последовательность ctx слов, начиная с позиции idx
+      for (let off = 0; off <= SEARCH_WINDOW; off++) {
+        const startIdx = state.idx + off;
+        if (startIdx + ctx > state.words.length) break;
+
+        let ok = true;
+        for (let k = 0; k < ctx; k++) {
+          const target = state.words[startIdx + k].norm;
+          if (!wordMatch(spokenCtx[k], target)) { ok = false; break; }
+        }
+
+        if (ok) {
+          // Совпал контекст — продвигаемся ровно на ctx слов
+          state.idx = startIdx + ctx;
+          // удаляем "съеденные" слова из буфера
+          state.recent.splice(state.recent.length - ctx, ctx);
+          render();
+          advanced = true;
+          break;
+        }
       }
+      if (advanced) break;
     }
   }
 }
+
+/* ================= статус и управление ================= */
 
 function setStatus(text, mode) {
   statusEl.textContent = text;
   dotEl.classList.remove('on', 'err');
   statusbarEl.classList.remove('listening', 'error');
-  if (mode === 'on') {
-    dotEl.classList.add('on');
-    statusbarEl.classList.add('listening');
-  } else if (mode === 'err') {
-    dotEl.classList.add('err');
-    statusbarEl.classList.add('error');
-  }
+  if (mode === 'on') { dotEl.classList.add('on'); statusbarEl.classList.add('listening'); }
+  else if (mode === 'err') { dotEl.classList.add('err'); statusbarEl.classList.add('error'); }
 }
 
 function start() {
@@ -494,25 +751,89 @@ function stopAll() {
   setStatus('Остановлено');
 }
 
-toggleBtn.addEventListener('click', () => {
-  if (state.listening) pause();
-  else start();
-});
+toggleBtn.addEventListener('click', () => state.listening ? pause() : start());
 
 $('btn-reset').addEventListener('click', () => {
   state.idx = 0;
+  state.recent = [];
   render();
   readerEl.scrollTop = 0;
   window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
 });
 
-const FONT_STEPS = [1.45, 1.65, 1.85];
-let fontStep = 0;
-$('btn-font').addEventListener('click', () => {
-  fontStep = (fontStep + 1) % FONT_STEPS.length;
-  textEl.style.fontSize = FONT_STEPS[fontStep] + 'rem';
+/* ================= Bottom Sheet ================= */
+
+const sheet = $('sheet');
+const sheetBackdrop = $('sheet-backdrop');
+
+function openSheet() {
+  sheet.classList.add('open');
+  sheetBackdrop.classList.add('open');
   window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+}
+function closeSheet() {
+  sheet.classList.remove('open');
+  sheetBackdrop.classList.remove('open');
+}
+
+$('btn-font').addEventListener('click', openSheet);
+sheetBackdrop.addEventListener('click', closeSheet);
+
+/* ================= Размер шрифта ================= */
+
+const slider = $('size-slider');
+const sizeValue = $('size-value');
+const MIN_SIZE = 18, MAX_SIZE = 40;
+let fontSize = 24;
+
+function applyFontSize(v) {
+  fontSize = Math.max(MIN_SIZE, Math.min(MAX_SIZE, v));
+  document.documentElement.style.setProperty('--font-size', fontSize + 'px');
+  slider.value = fontSize;
+  sizeValue.textContent = fontSize + 'px';
+  try { localStorage.setItem('sufleur_size', fontSize); } catch(_) {}
+}
+
+slider.addEventListener('input', e => applyFontSize(+e.target.value));
+$('size-minus').addEventListener('click', () => applyFontSize(fontSize - 2));
+$('size-plus').addEventListener('click', () => applyFontSize(fontSize + 2));
+
+/* ================= Шрифты ================= */
+
+const FONTS = {
+  system: `-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, Roboto, sans-serif`,
+  serif: `Georgia, "Times New Roman", "PT Serif", serif`,
+  mono: `"SF Mono", ui-monospace, Menlo, Consolas, monospace`,
+  rounded: `"SF Pro Rounded", "Nunito", "Comfortaa", system-ui, sans-serif`,
+};
+
+document.querySelectorAll('.font-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.font;
+    document.querySelectorAll('.font-opt').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.documentElement.style.setProperty('--font-family', FONTS[key]);
+    try { localStorage.setItem('sufleur_font', key); } catch(_) {}
+    window.Telegram?.WebApp?.HapticFeedback?.selectionChanged?.();
+  });
 });
+
+/* ================= восстанавливаем настройки ================= */
+
+try {
+  const savedSize = +localStorage.getItem('sufleur_size');
+  if (savedSize) applyFontSize(savedSize); else applyFontSize(24);
+
+  const savedFont = localStorage.getItem('sufleur_font');
+  if (savedFont && FONTS[savedFont]) {
+    document.documentElement.style.setProperty('--font-family', FONTS[savedFont]);
+    document.querySelectorAll('.font-opt').forEach(b => {
+      b.classList.toggle('active', b.dataset.font === savedFont);
+    });
+  }
+} catch(_) { applyFontSize(24); }
+
+/* ================= Telegram ================= */
 
 try {
   if (window.Telegram?.WebApp) {
@@ -520,8 +841,8 @@ try {
     tg.ready();
     tg.expand();
     tg.disableVerticalSwipes?.();
-    tg.setHeaderColor?.('#0a0e14');
-    tg.setBackgroundColor?.('#0a0e14');
+    tg.setHeaderColor?.('#0b0f16');
+    tg.setBackgroundColor?.('#0b0f16');
   }
 } catch (_) {}
 
